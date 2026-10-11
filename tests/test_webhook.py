@@ -22,6 +22,11 @@ class Tests(unittest.IsolatedAsyncioTestCase):
      headers={'X-Telegram-Bot-Api-Secret-Token':'s'*40}
      async with client.post(f'http://127.0.0.1:{port}/telegram',data='broken',headers=headers) as r: self.assertEqual(r.status,400)
      async with client.post(f'http://127.0.0.1:{port}/telegram',json={},headers=headers) as r: self.assertEqual(r.status,200)
+     update={'update_id':9001,'message':{'chat':{'id':1,'type':'private'},'text':'/start'}}
+     before=sum(c.args[0]=='sendMessage' for c in b.api.call_args_list)
+     for _ in range(2):
+      async with client.post(f'http://127.0.0.1:{port}/telegram',json=update,headers=headers) as r:self.assertEqual(r.status,200)
+     self.assertEqual(sum(c.args[0]=='sendMessage' for c in b.api.call_args_list)-before,1)
      self.assertTrue(any(c.args[0]=='setWebhook' for c in b.api.call_args_list))
    finally:
     task.cancel()
