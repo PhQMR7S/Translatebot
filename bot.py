@@ -5,12 +5,12 @@ from aiohttp import web
 from translation import process, TranslationError, MAX_BYTES
 
 LABELS={'line':'📘 ترجمة سطرية','arabic':'📗 عربية كاملة'}
-WELCOME='QMR Translate 🩺\nاختر طريقة الترجمة، ثم أرسل ملف PDF نصيًا باللغة الإنجليزية.\n\n📘 سطرية: كل سطر إنجليزي وتحته العربية.\n📗 عربية كاملة: استبدال النص الإنجليزي بالعربية داخل الصفحات إن اتسعت.\n\nالنتيجة تصل هنا كملف PDF. الخدمة مجانية ضمن حدود Gemini والاستضافة؛ لا مدفوعات. لا ترسل بيانات مرضى تعريفية.'
+WELCOME='QMR Translate 🩺\nاختر طريقة الترجمة، ثم أرسل ملف PDF نصيًا باللغة الإنجليزية.\n\n📘 سطرية: كل سطر إنجليزي وتحته العربية.\n📗 عربية كاملة: استبدال النص الإنجليزي بالعربية داخل الصفحات إن اتسعت.\n\nالنتيجة تصل هنا كملف PDF. الخدمة مجانية ضمن حدود Gemini والاستضافة؛ لا مدفوعات. لا ترسل بيانات مرضى تعريفية.\n\nيمكنك أيضًا اختيار زر الموقع للترجمة يدويًا عبر Online Doc Translator.'
 HELP='أرسل PDF نصيًا، ثم اختر أحد الخيارين أسفل رسالة الملف. يمكنك أيضًا اختيار الوضع قبل الإرسال.\n\nالحد الحالي: 20 MB، و120 صفحة، و150 ألف حرف. الملفات المصوّرة أو المحتوية على صور غير مدعومة حاليًا.\n\nالسطرية تزيد عدد الصفحات. العربية الكاملة تحافظ على ترتيب الصفحات، وقد تختلف فواصل الأسطر؛ إذا لم يتسع النص يُعاد تنسيقه تلقائيًا دون قص.\n\n/status لحالة المعالجة، و/cancel لإلغائها.'
 PRIVACY='الملف يُنزّل مؤقتًا للمعالجة، ويُرسل النص إلى Gemini. قد تستخدم Google محتوى المستوى المجاني لتحسين منتجاتها.\n\nاستخدم ملفات تعليمية خالية من بيانات المرضى التعريفية. اختيار وضع الترجمة يؤكد موافقتك على هذه المعالجة.\n\nلا نحفظ الملفات في قاعدة بيانات ولا نسجل محتواها. تُحذف المراجع المؤقتة بعد المعالجة؛ Telegram يحتفظ بالرسائل وفق سياسته.'
 REVIEW='راجع الجرعات والأرقام والوحدات والنفي والمصطلحات مقابل الأصل. يفحص البوت اكتمال المقاطع وترتيبها وبعض الأرقام والرموز؛ هذه الفحوص لا تضمن صحة المعنى الطبي.\n\nالترجمة تنقل محتوى المصدر ولا تصحح أخطاءه العلمية. لا تعتمد عليها لاتخاذ قرار علاجي دون مراجعة مختص.'
 def button(text,data):return {'text':text,'callback_data':data}
-def menu():return {'inline_keyboard':[[button(LABELS['line'],'mode:line'),button(LABELS['arabic'],'mode:arabic')],[button('📋 التعليمات','help'),button('🔒 الخصوصية','privacy')],[button('🩺 مراجعة النتيجة','review'),button('⏳ حالة الملف','status')]]}
+def menu():return {'inline_keyboard':[[button(LABELS['line'],'mode:line'),button(LABELS['arabic'],'mode:arabic')],[{'text':'🌐 ترجمة عبر الموقع','url':'https://www.onlinedoctranslator.com/ar/'}],[button('📋 التعليمات','help'),button('🔒 الخصوصية','privacy')],[button('🩺 مراجعة النتيجة','review'),button('⏳ حالة الملف','status')]]}
 class Bot:
  def __init__(self,token):
   self.token=token;self.modes={};self.pending=OrderedDict();self.jobs={};self.seen=OrderedDict();self.worker=asyncio.Semaphore(1)
@@ -62,6 +62,7 @@ class Bot:
    while len(self.pending)>128:self.pending.popitem(last=False)
    preferred=self.modes.get(chat)
    rows=[[button(LABELS[x]+(' ✓' if preferred==x else ''),f'file:{nonce}:{x}')] for x in LABELS]
+   rows.append([{'text':'🌐 استخدام موقع الترجمة بدل البوت','url':'https://www.onlinedoctranslator.com/ar/'}])
    rows.append([button('🔒 سياسة المعالجة','privacy')])
    return await self.say(chat,'📄 '+str(d.get('file_name','PDF'))[:150]+'\nاختر طريقة ترجمة هذا الملف.\n\nبالاختيار تؤكد أن الملف خالٍ من بيانات المرضى التعريفية وتوافق على إرساله إلى Gemini وفق /privacy.',{'inline_keyboard':rows})
   texts={'start':WELCOME,'help':HELP,'privacy':PRIVACY,'review':REVIEW,'about':WELCOME,'buy':'الخدمة مجانية. لا نجوم أو باقات.\n\n'+WELCOME}
