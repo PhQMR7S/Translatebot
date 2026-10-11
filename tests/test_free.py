@@ -40,3 +40,15 @@ class Tests(unittest.IsolatedAsyncioTestCase):
    result=[{'id':x['id'],'text':x['text']} for x in seg]
    output=render(doc,seg,result,mode);out=fitz.open(stream=output,filetype='pdf');self.assertGreater(len(out),0);out.close()
    doc.close()
+ async def test_free_quota_has_no_retry_or_fallback(self):
+  from translation import translate
+  class Response:
+   status=429
+   async def __aenter__(self):return self
+   async def __aexit__(self,*args):pass
+  class Session:
+   calls=0
+   def post(self,*args,**kwargs):self.calls+=1;return Response()
+  session=Session()
+  with self.assertRaises(TranslationError):await translate(session,'test',[{'id':'1','text':'5 mg'}],'line')
+  self.assertEqual(session.calls,1)
