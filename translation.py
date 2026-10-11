@@ -148,14 +148,14 @@ def render(doc,segments,translations,mode):
                 for a,b in zip(segments,translations):
                     if source!=a['page']:
                         source=a['page'];page=out.new_page(width=595,height=842);y=60
-                        page.insert_text((48,30),f'MEDAD | Source page {source+1}',fontsize=9)
+                        page.insert_text((48,30),f'QMR Translate | Source page {source+1}',fontsize=9)
                     content=('<div class="en">'+html.escape(a['text'],quote=False)+'</div>' if mode=='line' else '')+'<div class="ar" dir="rtl">'+arabic_html(b['text'])+'</div>'
                     spare,scale=test.insert_htmlbox(fitz.Rect(48,0,547,710),content,css=css,archive=archive,scale_low=1)
                     if spare<0:raise TranslationError('مقطع النص أكبر من الصفحة؛ أرسل ملفًا بتنسيق أبسط.')
                     height=710-spare
                     if y+height>785:
                         page=out.new_page(width=595,height=842);y=60
-                        page.insert_text((48,30),f'MEDAD | Source page {source+1} (continued)',fontsize=9)
+                        page.insert_text((48,30),f'QMR Translate | Source page {source+1} (continued)',fontsize=9)
                     spare,scale=page.insert_htmlbox(fitz.Rect(48,y,547,y+height+2),content,css=css,archive=archive,scale_low=1)
                     if spare<0:raise TranslationError('تعذر تنسيق الترجمة دون قص النص.')
                     y+=height+8;page.draw_line((48,y-3),(547,y-3),color=(.88,.9,.92),width=.4)

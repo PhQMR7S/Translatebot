@@ -5,7 +5,7 @@ from aiohttp import web
 from translation import process, TranslationError, MAX_BYTES
 
 LABELS={'line':'📘 ترجمة سطرية','arabic':'📗 عربية كاملة'}
-WELCOME='مِداد الطبي 🩺\nاختر طريقة الترجمة، ثم أرسل ملف PDF نصيًا باللغة الإنجليزية.\n\n📘 سطرية: كل سطر إنجليزي وتحته العربية.\n📗 عربية كاملة: استبدال النص الإنجليزي بالعربية داخل الصفحات إن اتسعت.\n\nالنتيجة تصل هنا كملف PDF. الخدمة مجانية ضمن حدود Gemini والاستضافة؛ لا مدفوعات. لا ترسل بيانات مرضى تعريفية.'
+WELCOME='QMR Translate 🩺\nاختر طريقة الترجمة، ثم أرسل ملف PDF نصيًا باللغة الإنجليزية.\n\n📘 سطرية: كل سطر إنجليزي وتحته العربية.\n📗 عربية كاملة: استبدال النص الإنجليزي بالعربية داخل الصفحات إن اتسعت.\n\nالنتيجة تصل هنا كملف PDF. الخدمة مجانية ضمن حدود Gemini والاستضافة؛ لا مدفوعات. لا ترسل بيانات مرضى تعريفية.'
 HELP='أرسل PDF نصيًا، ثم اختر أحد الخيارين أسفل رسالة الملف. يمكنك أيضًا اختيار الوضع قبل الإرسال.\n\nالحد الحالي: 20 MB، و120 صفحة، و150 ألف حرف. الملفات المصوّرة أو المحتوية على صور غير مدعومة حاليًا.\n\nالسطرية تزيد عدد الصفحات. العربية الكاملة تحافظ على ترتيب الصفحات، وقد تختلف فواصل الأسطر؛ إذا لم يتسع النص يُعاد تنسيقه تلقائيًا دون قص.\n\n/status لحالة المعالجة، و/cancel لإلغائها.'
 PRIVACY='الملف يُنزّل مؤقتًا للمعالجة، ويُرسل النص إلى Gemini. قد تستخدم Google محتوى المستوى المجاني لتحسين منتجاتها.\n\nاستخدم ملفات تعليمية خالية من بيانات المرضى التعريفية. اختيار وضع الترجمة يؤكد موافقتك على هذه المعالجة.\n\nلا نحفظ الملفات في قاعدة بيانات ولا نسجل محتواها. تُحذف المراجع المؤقتة بعد المعالجة؛ Telegram يحتفظ بالرسائل وفق سياسته.'
 REVIEW='راجع الجرعات والأرقام والوحدات والنفي والمصطلحات مقابل الأصل. يفحص البوت اكتمال المقاطع وترتيبها وبعض الأرقام والرموز؛ هذه الفحوص لا تضمن صحة المعنى الطبي.\n\nالترجمة تنقل محتوى المصدر ولا تصحح أخطاءه العلمية. لا تعتمد عليها لاتخاذ قرار علاجي دون مراجعة مختص.'
@@ -80,7 +80,7 @@ class Bot:
        if len(data)>MAX_BYTES:raise TranslationError('الملف أكبر من الحد الحالي 20 MB.')
      result=await process(self.http,os.environ['GEMINI_API_KEY'],bytes(data),mode)
      form=aiohttp.FormData();form.add_field('chat_id',str(chat));form.add_field('caption',LABELS[mode]+'\nفُحص ترتيب المقاطع والأرقام والرموز الأساسية. راجع الدقة الطبية مقابل الأصل. /review')
-     form.add_field('document',result,filename='Medad_'+mode+'.pdf',content_type='application/pdf')
+     form.add_field('document',result,filename='QMR_'+mode+'.pdf',content_type='application/pdf')
      async with self.http.post('https://api.telegram.org/bot'+self.token+'/sendDocument',data=form,timeout=aiohttp.ClientTimeout(total=90)) as r:
       response=await r.json()
       if not response.get('ok'):raise TranslationError('اكتملت الترجمة لكن تعذر إرسال الملف. أعد المحاولة.')
@@ -120,7 +120,7 @@ class Bot:
    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as self.http:
     await self.api('getMe')
     await self.api('setMyCommands',commands=[{'command':a,'description':b} for a,b in [('start','اختيار طريقة الترجمة'),('help','الملفات المدعومة والتعليمات'),('privacy','خصوصية معالجة الملفات'),('review','مراجعة الدقة الطبية'),('status','حالة الملف'),('cancel','إلغاء المعالجة')]])
-    await self.api('setMyDescription',description='مِداد الطبي: ترجمة PDF النصي داخل Telegram. اختر ترجمة سطرية أو عربية كاملة. مجاني ضمن حدود الخدمة. لا ترسل بيانات مرضى تعريفية.')
+    await self.api('setMyDescription',description='QMR Translate: ترجمة PDF النصي داخل Telegram. اختر ترجمة سطرية أو عربية كاملة. مجاني ضمن حدود الخدمة. لا ترسل بيانات مرضى تعريفية.')
     await self.api('setWebhook',url=url+'/telegram',secret_token=secret,allowed_updates=['message','callback_query'],max_connections=5)
     ready=True;await asyncio.Event().wait()
   finally:
